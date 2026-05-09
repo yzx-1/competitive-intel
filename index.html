@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>竞品情报 v5-fix</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.12.0/pptxgen.bundled.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+:root{--bg:#0d0f14;--surface:#161920;--surface2:#1e2230;--surface3:#252a3a;--border:rgba(255,255,255,0.07);--border-lit:rgba(99,182,255,0.35);--text:#e8eaf0;--muted:#6b7280;--dim:#3d4455;--accent:#63b6ff;--accent-bg:rgba(99,182,255,0.08);--green:#4ade80;--green-bg:rgba(74,222,128,0.08);--amber:#fbbf24;--amber-bg:rgba(251,191,36,0.08);--red:#f87171;--red-bg:rgba(248,113,113,0.08);--purple:#a78bfa;--purple-bg:rgba(167,139,250,0.08);--font:'Sora',sans-serif;--mono:'JetBrains Mono',monospace;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;padding:2rem 1rem 5rem;}
+.page{max-width:820px;margin:0 auto;}
+.header{margin-bottom:2rem;}
+.eyebrow{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+.eyebrow-text{font-family:var(--mono);font-size:10px;color:var(--accent);letter-spacing:.15em;text-transform:uppercase;}
+h1{font-size:24px;font-weight:600;letter-spacing:-.02em;}
+h1 em{font-style:normal;color:var(--accent);}
+.sub{font-size:13px;color:var(--muted);margin-top:6px;line-height:1.6;}
+.card{background:var(--surface);border:.5px solid var(--border);border-radius:14px;padding:1.4rem;margin-bottom:1rem;}
+.card-label{font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem;}
+.input-main{font-size:15px;padding:11px 14px;width:100%;margin-bottom:10px;}
+input,select{background:var(--surface2);border:.5px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font);font-size:13px;padding:9px 12px;outline:none;transition:border-color .2s;width:100%;}
+input:focus,select:focus{border-color:var(--border-lit);}
+input::placeholder{color:var(--dim);}
+.key-item label,.opt-item label{font-family:var(--mono);font-size:10px;color:var(--muted);display:block;margin-bottom:5px;}
+.provider-tabs{display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap;}
+.provider-tab{font-family:var(--mono);font-size:11px;padding:4px 12px;border-radius:6px;cursor:pointer;border:.5px solid var(--border);color:var(--muted);background:transparent;transition:all .15s;}
+.provider-tab.active{color:var(--accent);border-color:var(--border-lit);background:var(--accent-bg);}
+.provider-config{display:none;}
+.provider-config.active{display:block;}
+.provider-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
+.opt-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;}
+.run-btn{width:100%;padding:12px;background:var(--accent);color:#08111f;border:none;border-radius:8px;font-family:var(--font);font-size:14px;font-weight:600;cursor:pointer;transition:opacity .15s;}
+.run-btn:hover{opacity:.88;}
+.run-btn:disabled{opacity:.3;cursor:not-allowed;}
+.hint{font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:8px;}
+.debug-panel{background:#0a0c10;border:.5px solid rgba(99,182,255,0.2);border-radius:10px;padding:12px 14px;margin-bottom:1rem;}
+.debug-title{font-family:var(--mono);font-size:10px;color:var(--accent);margin-bottom:8px;}
+.debug-log{font-family:var(--mono);font-size:11px;color:var(--muted);line-height:1.7;max-height:220px;overflow-y:auto;white-space:pre-wrap;}
+.debug-log .ok{color:var(--green);}
+.debug-log .err{color:var(--red);}
+.debug-log .warn{color:var(--amber);}
+.progress-wrap{margin:12px 0 4px;}
+.progress-track{background:var(--surface3);border-radius:4px;height:3px;overflow:hidden;}
+.progress-fill{height:100%;background:var(--accent);border-radius:4px;transition:width .4s;}
+.progress-label{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:5px;}
+.iter-section{display:none;}
+.iter-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.iter-title{font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;}
+.iter-badge{font-family:var(--mono);font-size:10px;color:var(--accent);background:var(--accent-bg);padding:3px 10px;border-radius:20px;}
+.iter-block{margin-bottom:8px;border:.5px solid var(--border);border-radius:10px;overflow:hidden;}
+.iter-block-header{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--surface2);cursor:pointer;user-select:none;}
+.iter-num{font-family:var(--mono);font-size:10px;color:var(--accent);background:var(--accent-bg);padding:2px 8px;border-radius:4px;}
+.iter-block-title{font-size:13px;font-weight:500;flex:1;}
+.iter-body{padding:12px 14px;display:none;border-top:.5px solid var(--border);}
+.iter-body.open{display:block;}
+.plan-box{background:var(--surface3);border-radius:8px;padding:10px 12px;margin-bottom:10px;}
+.plan-box-title{font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:6px;}
+.plan-text{font-size:12px;color:var(--muted);line-height:1.6;}
+.query-chip{display:inline-block;background:var(--surface3);border:.5px solid var(--border);border-radius:5px;padding:3px 10px;font-family:var(--mono);font-size:11px;color:var(--text);margin:2px 2px 2px 0;}
+.query-intent{font-size:11px;color:var(--muted);margin-top:2px;padding-left:4px;margin-bottom:6px;}
+.sources-grid{display:flex;flex-direction:column;gap:6px;margin-top:10px;}
+.source-card{background:var(--surface3);border-radius:8px;padding:10px 12px;border-left:2px solid var(--dim);}
+.source-card.high{border-left-color:var(--green);}
+.source-card.mid{border-left-color:var(--amber);}
+.source-card.low{border-left-color:var(--red);}
+.source-top{display:flex;align-items:flex-start;gap:8px;}
+.source-title{font-size:12px;font-weight:500;flex:1;line-height:1.4;}
+.conf-badge{font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:4px;flex-shrink:0;}
+.conf-badge.high{background:var(--green-bg);color:var(--green);}
+.conf-badge.mid{background:var(--amber-bg);color:var(--amber);}
+.conf-badge.low{background:var(--red-bg);color:var(--red);}
+.source-meta{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:4px;}
+.source-snippet{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.5;}
+.source-url{font-family:var(--mono);font-size:10px;color:var(--accent);margin-top:4px;word-break:break-all;opacity:.7;}
+.running-line{display:flex;align-items:center;gap:8px;padding:8px 0;font-size:13px;color:var(--accent);}
+.spinner{width:14px;height:14px;border:1.5px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.stop-badge{display:inline-flex;align-items:center;gap:6px;margin-top:8px;background:var(--green-bg);border:.5px solid rgba(74,222,128,.2);border-radius:6px;padding:5px 12px;font-size:12px;color:var(--green);}
+.critic-search-tag{display:inline-flex;align-items:center;gap:5px;background:var(--purple-bg);border:.5px solid rgba(167,139,250,.25);border-radius:5px;padding:3px 10px;font-family:var(--mono);font-size:10px;color:var(--purple);margin:2px 2px 2px 0;}
+.analysis-section{display:none;}
+.agent-block{margin-bottom:8px;border:.5px solid var(--border);border-radius:10px;overflow:hidden;}
+.agent-block-header{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--surface2);}
+.agent-icon{font-size:18px;}
+.agent-name{font-size:14px;font-weight:500;}
+.agent-role{font-family:var(--mono);font-size:10px;color:var(--muted);}
+.agent-state{font-family:var(--mono);font-size:10px;margin-left:auto;}
+.agent-state.idle{color:var(--dim);}
+.agent-state.running{color:var(--accent);}
+.agent-state.done{color:var(--green);}
+.agent-body{padding:16px;border-top:.5px solid var(--border);display:none;}
+.agent-body.open{display:block;}
+.md-body{font-size:13.5px;line-height:1.85;color:var(--text);}
+.md-body.md-light{color:#1f2937;}
+.md-body.md-light h1,.md-body.md-light h2{color:#111827;border-color:#e5e7eb;}
+.md-body.md-light h3{color:#1d4ed8;}
+.md-body.md-light h4{color:#7c3aed;}
+.md-body.md-light strong{color:#111827;}
+.md-body.md-light em{color:#6b7280;}
+.md-body.md-light blockquote{background:#eff6ff;border-left-color:#3b82f6;color:#374151;}
+.md-body.md-light code{background:#f3f4f6;color:#b45309;}
+.md-body.md-light pre{background:#f3f4f6;}
+.md-body.md-light pre code{color:#1f2937;}
+.md-body.md-light hr{border-color:#e5e7eb;}
+.md-body.md-light th{background:#f3f4f6;color:#1d4ed8;border-color:#e5e7eb;}
+.md-body.md-light td{border-color:#e5e7eb;}
+.md-body.md-light tr:nth-child(even) td{background:#f9fafb;}
+.md-body.md-light a{color:#2563eb;}
+.md-body h1{font-size:18px;font-weight:600;margin:1.2em 0 .5em;color:var(--text);border-bottom:.5px solid var(--border);padding-bottom:.3em;}
+.md-body h2{font-size:15px;font-weight:600;margin:1.1em 0 .4em;color:var(--text);}
+.md-body h3{font-size:13.5px;font-weight:600;margin:.9em 0 .3em;color:var(--accent);}
+.md-body h4{font-size:13px;font-weight:600;margin:.8em 0 .25em;color:var(--purple);}
+.md-body p{margin:.5em 0;}
+.md-body strong{font-weight:600;color:var(--text);}
+.md-body em{font-style:italic;color:var(--muted);}
+.md-body ul{padding-left:1.4em;margin:.4em 0;list-style:disc;}
+.md-body ol{padding-left:1.4em;margin:.4em 0;}
+.md-body li{margin:.28em 0;}
+.md-body blockquote{border-left:2px solid var(--accent);padding:.3em .8em;margin:.6em 0;color:var(--muted);background:var(--accent-bg);border-radius:0 6px 6px 0;}
+.md-body code{font-family:var(--mono);font-size:11px;background:var(--surface3);padding:1px 5px;border-radius:3px;color:var(--amber);}
+.md-body pre{background:var(--surface3);border-radius:8px;padding:10px 12px;overflow-x:auto;margin:.6em 0;}
+.md-body pre code{background:none;padding:0;color:var(--text);}
+.md-body hr{border:none;border-top:.5px solid var(--border);margin:1em 0;}
+.md-body table{width:100%;border-collapse:collapse;margin:.8em 0;font-size:12px;display:block;overflow-x:auto;}
+.md-body th{background:var(--surface3);padding:8px 12px;text-align:left;font-weight:600;border:.5px solid var(--border);color:var(--accent);white-space:nowrap;}
+.md-body td{padding:7px 12px;border:.5px solid var(--border);vertical-align:top;}
+.md-body tr:nth-child(even) td{background:rgba(255,255,255,.02);}
+.md-body a{color:var(--accent);text-decoration:none;}
+.md-body a:hover{text-decoration:underline;}
+.insight-card{display:none;background:linear-gradient(135deg,var(--accent-bg),var(--purple-bg));border:.5px solid rgba(99,182,255,.2);border-radius:12px;padding:1.4rem;margin-bottom:1rem;}
+.insight-eyebrow{font-family:var(--mono);font-size:10px;color:var(--accent);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;}
+.export-bar{display:none;gap:8px;margin-top:14px;}
+.export-bar.show{display:flex;}
+.export-btn{flex:1;padding:10px;background:var(--surface2);border:.5px solid var(--border);border-radius:8px;color:var(--muted);font-family:var(--font);font-size:13px;cursor:pointer;transition:all .15s;text-align:center;}
+.export-btn:hover{color:var(--text);border-color:rgba(255,255,255,.15);}
+.export-btn.primary{border-color:var(--border-lit);color:var(--accent);background:var(--accent-bg);}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+</style>
+</head>
+<body>
+<div class="page">
+<div class="header">
+  <div class="eyebrow"><div class="dot"></div><div class="eyebrow-text">Competitive Intelligence · v5-fix</div></div>
+  <h1><em>竞品情报</em>分析小队</h1>
+  <p class="sub">输入任意品类（硬件/软件/消费品/SaaS）· Planner动态规划 · 信源分级 · Critic真实验证</p>
+</div>
+
+<div class="card">
+  <div class="card-label">// 任务配置</div>
+  <input type="text" class="input-main" id="category-input" placeholder="输入品类，如：智能门铃、扫地机器人、Notion、运动相机…"/>
+  <div style="margin-bottom:12px">
+    <div class="key-item">
+      <label>AI 模型</label>
+      <select id="model-select">
+        <option value="deepseek-v4-pro">DeepSeek V4 Pro（推荐）</option>
+        <option value="deepseek-v4-flash">DeepSeek V4 Flash（快速）</option>
+      </select>
+    </div>
+  </div>
+  <div class="opt-row" style="margin-top:10px">
+    <div class="opt-item"><label>调研深度</label><select id="max-rounds"><option value="2">快速·2轮</option><option value="3" selected>标准·3轮</option><option value="4">深度·4轮</option></select></div>
+    <div class="opt-item"><label>每轮搜索数</label><select id="searches-per-round"><option value="2">2条</option><option value="3" selected>3条</option><option value="4">4条</option></select></div>
+    <div class="opt-item"><label>Critic验证数</label><select id="critic-searches"><option value="2">2条</option><option value="3" selected>3条</option><option value="4">4条</option></select></div>
+  </div>
+  <button class="run-btn" id="run-btn" onclick="startResearch()">▶ 启动情报小队</button>
+  <div class="hint">🔒 API Key 由服务端安全管理，不在前端暴露，无需自行申请。</div>
+</div>
+
+<!-- 调试面板（自动显示） -->
+<div class="debug-panel" id="debug-panel">
+  <div class="debug-title">// 调试日志</div>
+  <div class="debug-log" id="debug-log"></div>
+</div>
+
+<div class="card iter-section" id="iter-section">
+  <div class="iter-header">
+    <div class="iter-title">// Planner 调研日志</div>
+    <div class="iter-badge" id="iter-badge">第 0 轮</div>
+  </div>
+  <div id="iter-log"></div>
+  <div class="progress-wrap" id="progress-wrap" style="display:none">
+    <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    <div class="progress-label" id="progress-label">准备中...</div>
+  </div>
+</div>
+
+<div class="analysis-section" id="analysis-section">
+  <div class="agent-block" style="background:#fff;border:.5px solid #e5e7eb;border-radius:14px;margin-bottom:10px;overflow:hidden;">
+    <div class="agent-block-header" style="background:#f9fafb;border-bottom:.5px solid #e5e7eb;">
+      <span class="agent-icon">⚗️</span>
+      <div><div class="agent-name" style="color:#111;">Analyst</div><div class="agent-role" style="color:#6b7280;">结构化分析师</div></div>
+      <div class="agent-state idle" id="analyst-state">等待情报</div>
+    </div>
+    <div class="agent-body" id="analyst-body" style="background:#fff;">
+      <div class="md-body md-light" id="analyst-text"></div>
+    </div>
+  </div>
+  <div class="agent-block" style="background:#fff;border:.5px solid #e5e7eb;border-radius:14px;margin-bottom:10px;overflow:hidden;">
+    <div class="agent-block-header" style="background:#f9fafb;border-bottom:.5px solid #e5e7eb;">
+      <span class="agent-icon">🧨</span>
+      <div><div class="agent-name" style="color:#111;">Critic</div><div class="agent-role" style="color:#6b7280;">质疑验证者（反向找茬）</div></div>
+      <div class="agent-state idle" id="critic-state">等待Analyst</div>
+    </div>
+    <div class="agent-body" id="critic-body" style="background:#fff;">
+      <div id="critic-searches-display" style="margin-bottom:12px"></div>
+      <div class="md-body md-light" id="critic-text"></div>
+    </div>
+  </div>
+  <div class="agent-block" style="background:#fff;border:.5px solid #e5e7eb;border-radius:14px;margin-bottom:10px;overflow:hidden;">
+    <div class="agent-block-header" style="background:#f9fafb;border-bottom:.5px solid #e5e7eb;">
+      <span class="agent-icon">🔄</span>
+      <div><div class="agent-name" style="color:#111;">Resolver</div><div class="agent-role" style="color:#6b7280;">矛盾解决者（Critic驱动补充搜索）</div></div>
+      <div class="agent-state idle" id="resolver-state">等待Critic</div>
+    </div>
+    <div class="agent-body" id="resolver-body" style="background:#fff;">
+      <div id="resolver-searches-display" style="margin-bottom:12px"></div>
+      <div class="md-body md-light" id="resolver-text"></div>
+    </div>
+  </div>
+  <div class="agent-block" style="background:#fff;border:.5px solid #e5e7eb;border-radius:14px;margin-bottom:10px;overflow:hidden;">
+    <div class="agent-block-header" style="background:#f9fafb;border-bottom:.5px solid #e5e7eb;">
+      <span class="agent-icon">🧠</span>
+      <div><div class="agent-name" style="color:#111;">Strategist</div><div class="agent-role" style="color:#6b7280;">首席参谋</div></div>
+      <div class="agent-state idle" id="strategist-state">等待完成</div>
+    </div>
+    <div class="agent-body" id="strategist-body" style="background:#fff;">
+      <div class="md-body md-light" id="strategist-text"></div>
+    </div>
+  </div>
+</div>
+
+<div class="insight-card" id="insight-card">
+  <div class="insight-eyebrow">// Strategist · 最终战略洞察</div>
+  <div class="md-body" id="insight-text"></div>
+  <div class="export-bar" id="export-bar">
+    <button class="export-btn" onclick="exportMarkdown()">↓ 导出报告 .md</button>
+    <button class="export-btn primary" onclick="exportPPT()">↓ 导出 PPT</button>
+  </div>
+</div>
+</div>
+
+<script>
+// ─── SESSION KEY CACHE ───
+
+// sessionStorage: 后端模式不需要缓存Key
+
+// ─── DEBUG ───
+function dbg(msg,type=''){
+  const el=document.getElementById('debug-log');
+  const span=document.createElement('span');
+  span.className=type;
+  span.textContent='['+new Date().toLocaleTimeString()+'] '+msg+'\n';
+  el.appendChild(span);
+  el.scrollTop=el.scrollHeight;
+  console.log('[DBG]',msg);
+}
+
+// ─── MARKDOWN ───
+function renderMarkdown(raw){
+  if(!raw)return'';
+  let text=raw.replace(/\r\n/g,'\n').replace(/\r/g,'\n');
+  const codeBlocks=[];
+  text=text.replace(/```(\w*)\n?([\s\S]*?)```/g,(_,lang,code)=>{
+    codeBlocks.push('<pre><code>'+escText(code.trim())+'</code></pre>');
+    return'\x00CODE'+(codeBlocks.length-1)+'\x00';
+  });
+  text=text.replace(/(\|.+\|\n)([ \t]*\|[ \t]*[-:]+[ \t]*\|.*\n)((?:[ \t]*\|.+\|\n?)*)/g,(_,head,sep,body)=>{
+    const pr=r=>r.split('|').slice(1,-1).map(c=>c.trim());
+    const aligns=pr(sep).map(c=>c.startsWith(':')&&c.endsWith(':')?'center':c.endsWith(':')?'right':'left');
+    const th=pr(head).map((h,i)=>'<th style="text-align:'+( aligns[i]||'left')+'">'+inlineFmt(h)+'</th>').join('');
+    const trs=body.trim().split('\n').filter(Boolean).map(r=>'<tr>'+pr(r).map((c,i)=>'<td style="text-align:'+(aligns[i]||'left')+'">'+inlineFmt(c)+'</td>').join('')+'</tr>').join('');
+    return'<table><thead><tr>'+th+'</tr></thead><tbody>'+trs+'</tbody></table>';
+  });
+  const lines=text.split('\n'),out=[];let i=0;
+  while(i<lines.length){
+    const line=lines[i];
+    if(line.includes('\x00CODE')){out.push(line.replace(/\x00CODE(\d+)\x00/g,(_,n)=>codeBlocks[+n]));i++;continue;}
+    if(/^<table|^<tr|^<thead|^<tbody/.test(line)){out.push(line);i++;continue;}
+    if(/^[-*_]{3,}$/.test(line.trim())){out.push('<hr>');i++;continue;}
+    const hm=line.match(/^(#{1,4})\s+(.+)/);
+    if(hm){out.push('<h'+hm[1].length+'>'+inlineFmt(hm[2])+'</h'+hm[1].length+'>');i++;continue;}
+    if(line.startsWith('> ')){out.push('<blockquote>'+inlineFmt(line.slice(2))+'</blockquote>');i++;continue;}
+    if(/^[-*+]\s/.test(line)){
+      const items=[];
+      while(i<lines.length&&/^[-*+]\s/.test(lines[i])){items.push('<li>'+inlineFmt(lines[i].replace(/^[-*+]\s/,''))+'</li>');i++;}
+      out.push('<ul>'+items.join('')+'</ul>');continue;
+    }
+    if(/^\d+\.\s/.test(line)){
+      const items=[];
+      while(i<lines.length&&/^\d+\.\s/.test(lines[i])){items.push('<li>'+inlineFmt(lines[i].replace(/^\d+\.\s/,''))+'</li>');i++;}
+      out.push('<ol>'+items.join('')+'</ol>');continue;
+    }
+    if(line.trim()===''){out.push('');i++;continue;}
+    out.push('<p>'+inlineFmt(line)+'</p>');i++;
+  }
+  return out.join('\n');
+}
+function inlineFmt(t){
+  return t
+    .replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/_(.+?)_/g,'<em>$1</em>')
+    .replace(/`([^`]+)`/g,'<code>$1</code>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank">$1</a>')
+    .replace(/~~(.+?)~~/g,'<del>$1</del>');
+}
+function escText(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function setMD(id,text){document.getElementById(id).innerHTML=renderMarkdown(text);}
+
+// ─── PROVIDER（后端模式，前端只选模型名）───
+let currentProvider='deepseek'; // 后端支持的provider，当前固定deepseek
+
+// ─── STATE ───
+let S={category:'',maxRounds:3,searchesPerRound:3,criticSearchCount:3,knowledgeBase:[],analystResult:'',criticResult:'',resolverResult:'',criticSearchResults:[],strategistResult:''};
+
+// ─── LLM（调用后端代理，Key在服务端，前端不可见）───
+async function callLLM(system,user,maxTokens=1500){
+  const p=currentProvider;
+  const modelMap={
+    deepseek: document.getElementById('model-select').value,
+  };
+  const selectedModel=modelMap[p]||'deepseek-v4-pro';
+  dbg('→ 后端代理 '+p+' '+selectedModel+' ('+maxTokens+'tok)');
+
+  // 构建messages（后端统一格式）
+  const messages=[{role:'system',content:system},{role:'user',content:user}];
+
+  const res=await fetch('/api/llm',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      provider: p,
+      model: selectedModel,
+      messages,
+      max_tokens: maxTokens
+    })
+  });
+  if(!res.ok){
+    const t=await res.text();
+    dbg('✗ HTTP '+res.status+': '+t.slice(0,200),'err');
+    throw new Error('LLM HTTP '+res.status+': '+t.slice(0,100));
+  }
+  const data=await res.json();
+  const content=data.choices?.[0]?.message?.content;
+  dbg('✓ 返回 '+(content||'').length+' 字符','ok');
+  return content||'';
+}
+
+// ─── JSON PARSE (robust) ───
+function parseJSON(text){
+  if(!text)return null;
+  // 1. direct
+  try{return JSON.parse(text.trim());}catch{}
+  // 2. ```json fence
+  const f1=text.match(/```json\s*([\s\S]*?)```/);
+  if(f1){try{return JSON.parse(f1[1].trim());}catch{}}
+  // 3. ``` fence
+  const f2=text.match(/```\s*([\s\S]*?)```/);
+  if(f2){try{return JSON.parse(f2[1].trim());}catch{}}
+  // 4. first { } block
+  const m=text.match(/\{[\s\S]*\}/);
+  if(m){
+    try{return JSON.parse(m[0]);}catch{}
+    // 5. fix trailing commas
+    try{return JSON.parse(m[0].replace(/,\s*([}\]])/g,'$1'));}catch{}
+    // 6. try to extract just the array part if full parse fails
+    const arr=m[0].match(/"next_searches"\s*:\s*(\[[\s\S]*?\])/);
+    if(arr){try{const searches=JSON.parse(arr[1]);return{next_searches:searches,round_goal:'自动规划',confidence_gaps:[],stop_reason:null};}catch{}}
+  }
+  dbg('JSON解析全部失败，原始: '+text.slice(0,400),'warn');
+  return null;
+}
+
+// ─── FALLBACK PLAN ───
+function makeFallbackPlan(category,round){
+  dbg('使用fallback搜索词 round='+round,'warn');
+  const sets=[
+    [{query:category+' top brands market overview 2025',intent:'主要品牌格局'},{query:category+' price range comparison features review',intent:'价格功能对比'},{query:category+' market size growth forecast',intent:'市场规模'}],
+    [{query:category+' user reviews complaints reddit forum 2025',intent:'用户痛点'},{query:'best '+category+' 2025 comparison',intent:'竞品对比'},{query:category+' new entrants startup innovation',intent:'新进入者'}],
+    [{query:category+' industry trends technology 2025 2026',intent:'趋势'},{query:category+' leading company strategy acquisition',intent:'头部战略'},{query:category+' niche opportunity gap unmet needs',intent:'市场空白'}],
+    [{query:category+' supply chain cost manufacturing',intent:'供应链'},{query:category+' pricing subscription model revenue',intent:'定价策略'},{query:category+' customer loyalty retention churn',intent:'用户黏性'}]
+  ];
+  const searches=sets[(round-1)%sets.length].slice(0,S.searchesPerRound);
+  return{round_goal:category+' 第'+round+'轮调研',confidence_gaps:['信息空白待补充'],next_searches:searches,stop_reason:round>=S.maxRounds?'达到最大轮数':null};
+}
+
+// ─── TAVILY ───
+async function searchTavily(query){
+  dbg('搜索: "'+query+'"');
+  const res=await fetch('/api/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query,search_depth:'basic'})});
+  if(!res.ok){dbg('Tavily失败 '+res.status,'err');throw new Error('Tavily '+res.status);}
+  const data=await res.json();
+  dbg('✓ Tavily '+(data.results||[]).length+' 条','ok');
+  return data.results||[];
+}
+function classifySource(url,title){
+  const s=((url||'')+' '+(title||'')).toLowerCase();
+  if(/sec\.gov|investor|annual.report|statista|gartner|idc\.com|forrester|bloomberg|reuters|wsj\.com|ft\.com|crunchbase|patent|earnings|10-k|filing/.test(s))return'high';
+  if(/reddit|twitter|x\.com|quora|zhihu|tieba|weibo|youtube|medium\.com|substack|forum|review|blog|opinion/.test(s))return'low';
+  return'mid';
+}
+const CONF_LABEL={high:'高置信',mid:'中置信',low:'参考'};
+const SOURCE_DESC={high:'权威（财报/研究机构）',mid:'行业媒体',low:'用户内容（仅参考）'};
+
+// ─── UI ───
+function setProgress(pct,label){document.getElementById('progress-fill').style.width=pct+'%';document.getElementById('progress-label').textContent=label;}
+function setAgentState(id,s,label){const el=document.getElementById(id+'-state');el.className='agent-state '+s;el.textContent=label;}
+function openAgentBody(id){document.getElementById(id+'-body').classList.add('open');}
+function toggleIter(id){document.getElementById(id+'-body').classList.toggle('open');}
+
+function renderIterBlock(round,planData,sources,isCurrent){
+  document.getElementById('iter-'+round)?.remove();
+  const queries=planData?.next_searches||[];
+  const gaps=planData?.confidence_gaps||[];
+  let srcHtml='';
+  if(sources&&sources.length>0){
+    srcHtml='<div class="sources-grid">'+sources.map(s=>'<div class="source-card '+s.confidence+'"><div class="source-top"><div class="source-title">'+esc(s.title||'（无标题）')+'</div><div class="conf-badge '+s.confidence+'">'+CONF_LABEL[s.confidence]+'</div></div><div class="source-meta">'+SOURCE_DESC[s.confidence]+' · '+esc(s.intent||'—')+'</div><div class="source-snippet">'+esc(s.snippet||'')+'</div><div class="source-url">'+esc(s.url||'')+'</div></div>').join('')+'</div>';
+  }else if(isCurrent){srcHtml='<div class="running-line"><div class="spinner"></div>正在执行搜索...</div>';}
+  const qHtml=queries.map(q=>'<span class="query-chip">'+esc(q.query)+'</span><div class="query-intent">→ '+esc(q.intent)+'</div>').join('');
+  const el=document.createElement('div');
+  el.className='iter-block';el.id='iter-'+round;
+  el.innerHTML='<div class="iter-block-header" onclick="toggleIter(\'iter-'+round+'\')"><span class="iter-num">Round '+round+'</span><span class="iter-block-title">'+esc(planData?.round_goal||'规划中...')+'</span><span style="font-size:11px;color:var(--muted)">▾</span></div><div class="iter-body open" id="iter-'+round+'-body">'+(gaps.length?'<div class="plan-box"><div class="plan-box-title">本轮信息空白</div><div class="plan-text">'+gaps.map((g,i)=>(i+1)+'. '+esc(g)).join('\n')+'</div></div>':'')+(qHtml?'<div style="margin-bottom:10px"><div class="plan-box-title" style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:6px">搜索计划</div>'+qHtml+'</div>':'')+srcHtml+(planData?.stop_reason?'<div class="stop-badge">✓ 收敛 · '+esc(planData.stop_reason)+'</div>':'')+'</div>';
+  document.getElementById('iter-log').appendChild(el);
+  document.getElementById('iter-badge').textContent='第 '+round+' 轮';
+}
+
+// ─── MAIN ───
+async function startResearch(){
+  S.category=document.getElementById('category-input').value.trim();
+  S.maxRounds=parseInt(document.getElementById('max-rounds').value);
+  S.searchesPerRound=parseInt(document.getElementById('searches-per-round').value);
+  S.criticSearchCount=parseInt(document.getElementById('critic-searches').value);
+  S.knowledgeBase=[];S.analystResult='';S.criticResult='';S.resolverResult='';S.criticSearchResults=[];S.strategistResult='';
+  document.getElementById('debug-log').innerHTML='';
+  if(!S.category){alert('请输入品类');return;}
+  const btn=document.getElementById('run-btn');
+  btn.disabled=true;btn.textContent='调研中...';
+  document.getElementById('iter-log').innerHTML='';
+  document.getElementById('iter-section').style.display='block';
+  document.getElementById('analysis-section').style.display='none';
+  document.getElementById('insight-card').style.display='none';
+  document.getElementById('export-bar').classList.remove('show');
+  document.getElementById('progress-wrap').style.display='block';
+  try{
+    // Phase 1: Planner
+    for(let round=1;round<=S.maxRounds;round++){
+      setProgress(Math.round((round-1)/S.maxRounds*55),'Round '+round+' · Planner规划...');
+      dbg('=== Round '+round+' ===');
+      const knownSummary=S.knowledgeBase.filter(s=>s.confidence!=='low').slice(-10).map(s=>'- '+s.title+': '+(s.snippet||'').slice(0,100)).join('\n')||'（暂无）';
+      let plan=null;
+      try{
+        const knownShort=knownSummary.split('\n').slice(0,6).join('\n');
+        const planSys='You are a competitive research planner. Output ONLY a raw JSON object. No explanation, no markdown, no code blocks. Your entire response must start with { and end with }.';
+        const planUsr='Category: '+S.category+'\nRound: '+round+' of '+S.maxRounds+'\nSearches needed: '+S.searchesPerRound+'\n\nKnown so far:\n'+knownShort+'\n\nRespond with ONLY this JSON:\n{"round_goal":"<one sentence>","confidence_gaps":["<gap1>","<gap2>"],"next_searches":[{"query":"<specific query with brand names>","intent":"<what this finds>","preferred_source":"<report|news|review>"}],"stop_reason":'+(round>=S.maxRounds?'"reached max rounds"':'null')+'}\n\nnext_searches must have exactly '+S.searchesPerRound+' items. stop_reason is '+(round>=S.maxRounds?'a non-null string':'null')+'.';
+        const raw=await callLLM(planSys,planUsr,1600);
+        dbg('Planner返回: '+raw.slice(0,300));
+        plan=parseJSON(raw);
+        if(plan&&plan.next_searches&&plan.next_searches.length>0){dbg('✓ JSON解析成功: '+plan.next_searches.map(s=>s.query).join(' | '),'ok');}
+        else{dbg('JSON解析失败或next_searches为空，启用fallback','warn');plan=null;}
+      }catch(e){dbg('Planner调用出错: '+e.message,'err');}
+      if(!plan)plan=makeFallbackPlan(S.category,round);
+      renderIterBlock(round,plan,null,true);
+      setProgress(Math.round((round-1)/S.maxRounds*55)+8,'Round '+round+' · 执行搜索...');
+      const roundSources=[];
+      await Promise.all((plan.next_searches||[]).map(async s=>{
+        try{
+          (await searchTavily(s.query)).forEach(r=>{
+            const conf=classifySource(r.url,r.title);
+            const src={query:s.query,intent:s.intent,title:r.title,url:r.url,snippet:(r.content||'').slice(0,300),confidence:conf,round};
+            roundSources.push(src);S.knowledgeBase.push(src);
+          });
+        }catch(e){dbg('搜索失败: '+s.query+' — '+e.message,'err');}
+      }));
+      dbg('Round '+round+' 完成，本轮'+roundSources.length+'条，累计'+S.knowledgeBase.length+'条','ok');
+      renderIterBlock(round,plan,roundSources,false);
+      if(plan.stop_reason||round===S.maxRounds){setProgress(58,'情报收集完成');break;}
+    }
+    dbg('知识库: 高'+S.knowledgeBase.filter(s=>s.confidence==='high').length+' 中'+S.knowledgeBase.filter(s=>s.confidence==='mid').length+' 低'+S.knowledgeBase.filter(s=>s.confidence==='low').length,'ok');
+
+    // Phase 2: Analyst
+    document.getElementById('analysis-section').style.display='block';
+    setProgress(60,'Analyst生成分析...');
+    setAgentState('analyst','running','分析中...');
+    const ctx=buildKnowledgeContext();
+    dbg('情报库长度: '+ctx.length+'字符');
+    S.analystResult=await callLLM(
+      '你是竞品分析师。基于情报库生成结构化报告。严禁在报告开头写"报告日期"或任何日期标题。时间表述只来自搜索结果的明确日期，没有明确日期就不写时间。每条结论标注置信度[高/中/低]和来源类型。使用Markdown格式（##标题，**粗体**，表格，列表）。',
+      '品类：'+S.category+'\n\n情报库：\n'+ctx+'\n\n请生成竞品分析报告：市场格局、各竞品差异化、用户真实需求、市场空白、数据质量说明。',
+      3000
+    );
+    setMD('analyst-text',S.analystResult);
+    openAgentBody('analyst');
+    setAgentState('analyst','done','完成');
+
+    // Phase 3: Critic — 两步合一：质疑报告 + 搜索词一次输出
+    setProgress(68,'Critic反向验证...');
+    setAgentState('critic','running','生成质疑报告 + 搜索词...');
+    openAgentBody('critic');
+
+    const cpSys='You are a skeptical fact-checker. You will output TWO sections:\n1. A Markdown analysis report\n2. A JSON block at the END for the Resolver to act on\n\nThe JSON must come LAST in your response, inside ```json ``` fences.';
+
+    // 先执行反向搜索（challenge + verify），再传给Critic
+    const dispEl=document.getElementById('critic-searches-display');
+
+    // Step A: 先做一轮轻量搜索获取反向证据
+    let evidence=[];
+    try{
+      const preSys='You are a skeptical fact-checker. Output ONLY valid JSON.';
+      const preUsr='Find up to '+S.criticSearchCount+' claims with numbers/percentages in this report. For each generate challenge_query (negative framing) and verify_query (alternative source).\nJSON only: {"claims":[{"claim":"quote","challenge_query":"...","verify_query":"..."}]}\nReport:\n'+S.analystResult.slice(0,3000);
+      const preRaw=await callLLM(preSys,preUsr,1000);
+      const pre=parseJSON(preRaw);
+      const preClaims=pre?.claims||[];
+      dbg('预搜索词: '+preClaims.length+'个','ok');
+
+      if(preClaims.length){
+        dispEl.innerHTML='<div style="font-family:var(--mono);font-size:10px;color:#6b7280;margin-bottom:6px">Critic 反向搜索</div>'+
+          preClaims.map(c=>
+            (c.challenge_query?'<span class="critic-search-tag" style="background:var(--red-bg);border-color:rgba(248,113,113,.25);color:var(--red)">👊 '+esc(c.challenge_query)+'</span>':'')+
+            (c.verify_query?'<span class="critic-search-tag">🔍 '+esc(c.verify_query)+'</span>':'')
+          ).join('');
+        setAgentState('critic','running','执行反向验证搜索...');
+        await Promise.all(preClaims.flatMap(c=>{
+          const jobs=[];
+          if(c.challenge_query) jobs.push(searchTavily(c.challenge_query).then(rs=>rs.slice(0,2).forEach(r=>{
+            const conf=classifySource(r.url,r.title);
+            evidence.push({type:'challenge',claim:c.claim,title:r.title,url:r.url,snippet:(r.content||'').slice(0,300),confidence:conf});
+            S.criticSearchResults.push({...r,intent:'[反向]'+c.challenge_query,confidence:conf});
+          })).catch(e=>dbg('challenge失败:'+e.message,'err')));
+          if(c.verify_query) jobs.push(searchTavily(c.verify_query).then(rs=>rs.slice(0,2).forEach(r=>{
+            const conf=classifySource(r.url,r.title);
+            evidence.push({type:'verify',claim:c.claim,title:r.title,url:r.url,snippet:(r.content||'').slice(0,300),confidence:conf});
+            S.criticSearchResults.push({...r,intent:'[验证]'+c.verify_query,confidence:conf});
+          })).catch(e=>dbg('verify失败:'+e.message,'err')));
+          return jobs;
+        }));
+        dbg('Critic证据: '+evidence.length+'条','ok');
+      }
+    }catch(e){dbg('Critic预搜失败: '+e.message,'err');}
+
+    // Step B: 构建cpUsr（此时evidence已填充），Critic写完整质疑报告 + 结尾附Resolver搜索词JSON
+    setAgentState('critic','running','写质疑报告 + 生成Resolver搜索词...');
+    const cpUsr='Analyst report on "'+S.category+'":\n'+S.analystResult.slice(0,4000)+'\n\n'+
+      (evidence.length
+        ? 'Evidence from reverse searches:\n'+evidence.map(e=>'['+e.type.toUpperCase()+'] Claim: '+e.claim+'\nEvidence: '+e.title+': '+e.snippet+'\nSource: '+e.url+' ['+e.confidence+']').join('\n\n---\n\n')
+        : '(No reverse search results available)')+'\n\n'+
+      'OUTPUT INSTRUCTIONS:\n\n## Section 1 - Markdown Analysis (in Chinese):\nWrite: ## 置信度复核, ## 数据冲突, ## 信息缺口\nFor each disputed claim: rate confidence, cite evidence, state if falsification failed.\n\n## Section 2 - JSON for Resolver (MUST be last, in ```json``` fence):\n```json\n{"resolver_searches":[{"query":"specific search query to resolve contradiction","resolves":"which specific contradiction"},{"query":"...","resolves":"..."}]}\n```\nInclude 2-4 searches targeting the MOST critical unresolved contradictions. Queries must be specific with numbers/brands.';
+    S.criticResult=await callLLM(cpSys,cpUsr,3000);
+    setMD('critic-text',S.criticResult);
+    setAgentState('critic','done','完成（含Resolver搜索词）');
+
+    // 从Critic输出末尾提取Resolver搜索词JSON
+    let resolverQueries=[];
+    try{
+      const jsonFence=S.criticResult.match(/```json\s*([\s\S]*?)```/);
+      if(jsonFence){
+        const parsed=JSON.parse(jsonFence[1].trim());
+        resolverQueries=(parsed.resolver_searches||[]).slice(0,4);
+        dbg('从Critic提取Resolver搜索词: '+resolverQueries.length+'个','ok');
+      }else{
+        dbg('Critic未输出JSON块，Resolver使用备用提取','warn');
+        // 备用：从质疑报告里提取高频提到的关键词作为搜索词
+        const fallbackSys='Output ONLY JSON. Extract 2 specific search queries from this critic report to resolve the main contradictions.\n{"resolver_searches":[{"query":"...","resolves":"..."}]}';
+        const fbRaw=await callLLM(fallbackSys,'Critic report:\n'+S.criticResult.slice(0,4000),800);
+        const fb=parseJSON(fbRaw);
+        resolverQueries=(fb?.resolver_searches||[]).slice(0,3);
+        dbg('备用提取: '+resolverQueries.length+'个','ok');
+      }
+    }catch(e){dbg('Resolver词提取失败: '+e.message,'err');}
+
+    // Phase 3.5: Resolver — 直接用Critic给的搜索词，无需二次LLM规划
+    setProgress(82,'Resolver · 执行补充搜索闭环...');
+    setAgentState('resolver','running','执行补充搜索...');
+    openAgentBody('resolver');
+
+    const resDispEl=document.getElementById('resolver-searches-display');
+    if(resolverQueries.length){
+      resDispEl.innerHTML='<div style="font-family:var(--mono);font-size:10px;color:#6b7280;margin-bottom:6px">Resolver 补充搜索（Critic指派）</div>'+
+        resolverQueries.map(q=>
+          '<span style="display:inline-flex;align-items:center;gap:5px;background:#f0fdf4;border:.5px solid #86efac;border-radius:5px;padding:3px 10px;font-family:var(--mono);font-size:10px;color:#15803d;margin:2px 2px 2px 0;">🔄 '+esc(q.query)+'</span>'+
+          '<div style="font-size:11px;color:#6b7280;margin:1px 0 6px 4px;">→ '+esc(q.resolves)+'</div>'
+        ).join('');
+    }
+
+    const resolverEvidence=[];
+    await Promise.all(resolverQueries.map(rq=>
+      searchTavily(rq.query).then(rs=>rs.slice(0,3).forEach(r=>{
+        const conf=classifySource(r.url,r.title);
+        resolverEvidence.push({query:rq.query,resolves:rq.resolves,title:r.title,url:r.url,snippet:(r.content||'').slice(0,350),confidence:conf});
+        S.criticSearchResults.push({...r,intent:'[Resolver]'+rq.query,confidence:conf});
+      })).catch(e=>dbg('Resolver搜索失败: '+e.message,'err'))
+    ));
+    dbg('Resolver证据: '+resolverEvidence.length+'条','ok');
+
+    setAgentState('resolver','running','综合更新结论...');
+    const resEvText=resolverEvidence.length
+      ? resolverEvidence.map(e=>'搜索: '+e.query+'\n目标: '+e.resolves+'\n发现: '+e.title+'\n摘要: '+e.snippet+'\n来源: '+e.url+' ['+e.confidence+']').join('\n\n---\n\n')
+      : null;
+
+    const resSys='你是矛盾解决者Resolver，使用Markdown格式输出中文。你的任务是给出最终可信结论，不是重复质疑。';
+    const resUsr=
+      'Critic质疑报告：\n'+S.criticResult.replace(/```json[\s\S]*?```/g,'').slice(0,4000)+'\n\n'+
+      (resEvText
+        ? 'Resolver补充搜索结果：\n'+resEvText+'\n\n对每个矛盾点，输出：\n**矛盾：** [描述]\n**补搜发现：** [找到什么]\n**更新结论：** [✅已解决/⚠️部分解决/❌未解决] [新结论]\n\n最后写一段"## 综合置信度更新"，说明哪些结论的置信度被提升/降低/维持。'
+        : '（补充搜索无结果）\n基于Critic质疑和Analyst原报告的逻辑，做内部一致性裁定：哪些矛盾可以通过逻辑推理解决，哪些必须外部验证才能确定。输出裁定结论和置信度评估。');
+
+    S.resolverResult=await callLLM(resSys,resUsr,3000);
+    setMD('resolver-text',S.resolverResult);
+    setAgentState('resolver','done','✓ 闭环完成');
+    setProgress(92,'Strategist生成最终洞察...');
+
+    // Phase 4: Strategist（现在接收Resolver更新后的结论）
+    setAgentState('strategist','running','综合推断...');
+    S.strategistResult=await callLLM(
+      '你是首席参谋，基于Analyst、Critic质疑、以及Resolver对矛盾的最新解决结论，生成最终战略报告。以Resolver的更新结论为准，不要重复已被解决的矛盾。语言简练，直接给结论，使用Markdown格式。',
+      '品类：'+S.category+'\n\nAnalyst原始分析：\n'+S.analystResult.slice(0,3000)+'\n\nCritic质疑：\n'+S.criticResult.replace(/```json[\s\S]*?```/g,'').slice(0,1500)+'\n\nResolver更新结论（以此为准）：\n'+S.resolverResult+'\n\n输出：一句话市场判断、Top3机会点（具体可执行）、主要风险、决策者优先行动2条、置信度总评（哪些可直接决策/哪些需补充）。',
+      3200
+    );
+    setMD('strategist-text',S.strategistResult);
+    setMD('insight-text',S.strategistResult);
+    openAgentBody('strategist');
+    setAgentState('strategist','done','完成');
+    setProgress(100,'✓ 全部完成');
+    document.getElementById('insight-card').style.display='block';
+    document.getElementById('export-bar').classList.add('show');
+    dbg('=== 完成 ===','ok');
+  }catch(e){dbg('致命错误: '+e.message,'err');console.error(e);alert('出错：'+e.message+'\n请查看调试日志。');setProgress(0,'出错');}
+  btn.disabled=false;btn.textContent='▶ 重新分析';
+}
+
+function buildKnowledgeContext(){
+  const h=S.knowledgeBase.filter(s=>s.confidence==='high');
+  const m=S.knowledgeBase.filter(s=>s.confidence==='mid');
+  const l=S.knowledgeBase.filter(s=>s.confidence==='low');
+  let ctx='';
+  if(h.length)ctx+='\n=== 高置信度 ===\n'+h.map(s=>'['+s.title+']\n'+s.snippet+'\n来源: '+s.url+'\n意图: '+s.intent).join('\n\n');
+  if(m.length)ctx+='\n\n=== 中置信度 ===\n'+m.slice(0,12).map(s=>'['+s.title+']\n'+s.snippet+'\n来源: '+s.url).join('\n\n');
+  if(l.length)ctx+='\n\n=== 参考 ===\n'+l.slice(0,6).map(s=>'['+s.title+']\n'+s.snippet).join('\n\n');
+  return ctx||'（情报库为空）';
+}
+
+function exportMarkdown(){
+  const all=[...S.knowledgeBase,...S.criticSearchResults];
+  const h=all.filter(s=>s.confidence==='high'),m=all.filter(s=>s.confidence==='mid'),l=all.filter(s=>s.confidence==='low');
+  const date=new Date().toISOString().split('T')[0];
+  const md='# '+S.category+' 竞品情报分析报告\n\n> 生成日期：'+date+' · 高置信 '+h.length+' · 中置信 '+m.length+' · 参考 '+l.length+'\n\n---\n\n## Analyst\n\n'+S.analystResult+'\n\n---\n\n## Critic\n\n'+S.criticResult+'\n\n---\n\n## Resolver（矛盾解决）\n\n'+S.resolverResult+'\n\n---\n\n## Strategist\n\n'+S.strategistResult+'\n\n---\n\n## 信源清单\n\n### 高置信度（'+h.length+'条）\n'+h.map(s=>'- ['+s.title+']('+s.url+')\n  > '+(s.snippet||'').slice(0,100)+'...').join('\n')+'\n\n### 中置信度（'+m.length+'条）\n'+m.map(s=>'- ['+s.title+']('+s.url+')').join('\n')+'\n\n### 参考（'+l.length+'条）\n'+l.map(s=>'- ['+s.title+']('+s.url+')').join('\n')+'\n';
+  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([md],{type:'text/markdown'})),download:'竞品分析_'+S.category+'_'+date+'.md'});a.click();
+}
+
+function exportPPT(){
+  const pptx=new PptxGenJS();pptx.layout='LAYOUT_WIDE';
+  const BG='0d0f14',ACCENT='63b6ff',TEXT='e8eaf0',MUTED='6b7280';
+  const date=new Date().toISOString().split('T')[0];
+  function addSlide(title,role,content,color){
+    const slide=pptx.addSlide();slide.background={color:BG};
+    slide.addShape(pptx.ShapeType.rect,{x:0,y:0,w:'100%',h:.06,fill:{color:color||ACCENT}});
+    slide.addText(role,{x:.4,y:.2,w:12,h:.3,fontSize:9,fontFace:'Courier New',color:color||ACCENT});
+    slide.addText(title,{x:.4,y:.55,w:12,h:.6,fontSize:22,fontFace:'Arial',color:TEXT,bold:true});
+    slide.addShape(pptx.ShapeType.rect,{x:.4,y:1.22,w:12.2,h:.01,fill:{color:'2a2e3d'}});
+    const plain=content.replace(/#{1,4}\s/g,'').replace(/[*_`>|]/g,'').replace(/\[(.+?)\]\(.+?\)/g,'$1').split('\n').filter(l=>l.trim()).slice(0,22);
+    slide.addText(plain.map(l=>({text:l,options:{fontSize:/^(##|【)/.test(l)?12:11,bold:/^(##|【)/.test(l),color:/^(##|【)/.test(l)?(color||ACCENT):TEXT,breakLine:true}})),{x:.4,y:1.38,w:12.2,h:5.3,fontFace:'Arial',valign:'top',paraSpaceAfter:3,lineSpacingMultiple:1.3});
+    slide.addText('竞品情报 · '+S.category+' · '+date,{x:.4,y:7.0,w:12,h:.25,fontSize:8,color:MUTED,fontFace:'Courier New'});
+  }
+  const cover=pptx.addSlide();cover.background={color:BG};
+  cover.addShape(pptx.ShapeType.rect,{x:0,y:0,w:'100%',h:.08,fill:{color:ACCENT}});
+  cover.addText('COMPETITIVE INTELLIGENCE · v8',{x:.6,y:1.5,w:12,h:.4,fontSize:10,fontFace:'Courier New',color:ACCENT});
+  cover.addText(S.category+' 竞品情报分析',{x:.6,y:2.1,w:12,h:1.0,fontSize:30,fontFace:'Arial',color:TEXT,bold:true});
+  const h=S.knowledgeBase.filter(s=>s.confidence==='high').length,m=S.knowledgeBase.filter(s=>s.confidence==='mid').length,l=S.knowledgeBase.filter(s=>s.confidence==='low').length;
+  cover.addText('信源：高置信 '+h+' · 中置信 '+m+' · 参考 '+l,{x:.6,y:3.2,w:12,h:.4,fontSize:12,fontFace:'Arial',color:MUTED});
+  cover.addText(date,{x:.6,y:6.6,w:12,h:.3,fontSize:10,fontFace:'Courier New',color:MUTED});
+  addSlide('结构化分析','ANALYST · 竞品分析师',S.analystResult,'4ade80');
+  addSlide('质疑与验证','CRITIC · 反向找茬',S.criticResult,'fbbf24');
+  addSlide('矛盾解决','RESOLVER · 矛盾解决者',S.resolverResult,'a78bfa');
+  addSlide('战略洞察','STRATEGIST · 首席参谋',S.strategistResult,ACCENT);
+  pptx.writeFile({fileName:'竞品分析_'+S.category+'_'+date+'.pptx'});
+}
+</script>
+</body>
+</html>
