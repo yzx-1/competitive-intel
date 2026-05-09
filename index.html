@@ -608,7 +608,7 @@ async function startResearch(){
     S.strategistResult=await callLLM(
       '你是首席参谋，基于Analyst、Critic质疑、以及Resolver对矛盾的最新解决结论，生成最终战略报告。以Resolver的更新结论为准，不要重复已被解决的矛盾。语言简练，直接给结论，使用Markdown格式。',
       '品类：'+S.category+'\n\nAnalyst原始分析：\n'+S.analystResult.slice(0,1500)+'\n\nCritic质疑：\n'+S.criticResult.replace(/```json[\s\S]*?```/g,'').slice(0,800)+'\n\nResolver更新结论（以此为准）：\n'+S.resolverResult.slice(0,800)+'\n\n输出：一句话市场判断、Top3机会点（具体可执行）、主要风险、决策者优先行动2条、置信度总评。',
-      1500
+      2500
     );
     setMD('strategist-text',S.strategistResult);
     setMD('insight-text',S.strategistResult);
@@ -642,31 +642,76 @@ function exportMarkdown(){
 }
 
 function exportPPT(){
+  if(typeof PptxGenJS==='undefined'){alert('PPT库尚未加载，请稍候再试。');return;}
   const pptx=new PptxGenJS();pptx.layout='LAYOUT_WIDE';
-  const BG='0d0f14',ACCENT='63b6ff',TEXT='e8eaf0',MUTED='6b7280';
   const date=new Date().toISOString().split('T')[0];
-  function addSlide(title,role,content,color){
-    const slide=pptx.addSlide();slide.background={color:BG};
-    slide.addShape(pptx.ShapeType.rect,{x:0,y:0,w:'100%',h:.06,fill:{color:color||ACCENT}});
-    slide.addText(role,{x:.4,y:.2,w:12,h:.3,fontSize:9,fontFace:'Courier New',color:color||ACCENT});
-    slide.addText(title,{x:.4,y:.55,w:12,h:.6,fontSize:22,fontFace:'Arial',color:TEXT,bold:true});
-    slide.addShape(pptx.ShapeType.rect,{x:.4,y:1.22,w:12.2,h:.01,fill:{color:'2a2e3d'}});
-    const plain=content.replace(/#{1,4}\s/g,'').replace(/[*_`>|]/g,'').replace(/\[(.+?)\]\(.+?\)/g,'$1').split('\n').filter(l=>l.trim()).slice(0,22);
-    slide.addText(plain.map(l=>({text:l,options:{fontSize:/^(##|【)/.test(l)?12:11,bold:/^(##|【)/.test(l),color:/^(##|【)/.test(l)?(color||ACCENT):TEXT,breakLine:true}})),{x:.4,y:1.38,w:12.2,h:5.3,fontFace:'Arial',valign:'top',paraSpaceAfter:3,lineSpacingMultiple:1.3});
-    slide.addText('竞品情报 · '+S.category+' · '+date,{x:.4,y:7.0,w:12,h:.25,fontSize:8,color:MUTED,fontFace:'Courier New'});
+  const WHITE='FFFFFF',DARK='1A1A2E',BLUE='2563EB',LIGHTBLUE='EFF6FF',
+        GRAY='6B7280',LIGHTGRAY='F3F4F6',BORDER='E5E7EB',
+        GREEN='059669',AMBER='D97706',RED='DC2626',PURPLE='7C3AED';
+
+  function splitPages(content,linesPerPage){
+    const lines=content
+      .replace(/```json[\s\S]*?```/g,'')
+      .replace(/#{1,4}\s/g,'')
+      .replace(/\*\*(.+?)\*\*/g,'$1')
+      .replace(/\*(.+?)\*/g,'$1')
+      .replace(/`([^`]+)`/g,'$1')
+      .replace(/\[([^\]]+)\]\([^)]+\)/g,'$1')
+      .replace(/[|>]/g,'')
+      .split('\n').map(l=>l.trim()).filter(Boolean);
+    const pages=[];
+    for(let i=0;i<lines.length;i+=linesPerPage) pages.push(lines.slice(i,i+linesPerPage));
+    return pages.length?pages:[['（无内容）']];
   }
-  const cover=pptx.addSlide();cover.background={color:BG};
-  cover.addShape(pptx.ShapeType.rect,{x:0,y:0,w:'100%',h:.08,fill:{color:ACCENT}});
-  cover.addText('COMPETITIVE INTELLIGENCE · v8',{x:.6,y:1.5,w:12,h:.4,fontSize:10,fontFace:'Courier New',color:ACCENT});
-  cover.addText(S.category+' 竞品情报分析',{x:.6,y:2.1,w:12,h:1.0,fontSize:30,fontFace:'Arial',color:TEXT,bold:true});
-  const h=S.knowledgeBase.filter(s=>s.confidence==='high').length,m=S.knowledgeBase.filter(s=>s.confidence==='mid').length,l=S.knowledgeBase.filter(s=>s.confidence==='low').length;
-  cover.addText('信源：高置信 '+h+' · 中置信 '+m+' · 参考 '+l,{x:.6,y:3.2,w:12,h:.4,fontSize:12,fontFace:'Arial',color:MUTED});
-  cover.addText(date,{x:.6,y:6.6,w:12,h:.3,fontSize:10,fontFace:'Courier New',color:MUTED});
-  addSlide('结构化分析','ANALYST · 竞品分析师',S.analystResult,'4ade80');
-  addSlide('质疑与验证','CRITIC · 反向找茬',S.criticResult,'fbbf24');
-  addSlide('矛盾解决','RESOLVER · 矛盾解决者',S.resolverResult,'a78bfa');
-  addSlide('战略洞察','STRATEGIST · 首席参谋',S.strategistResult,ACCENT);
-  pptx.writeFile({fileName:'竞品分析_'+S.category+'_'+date+'.pptx'});
+
+  function addContentSlide(title,subtitle,lines,accent){
+    const slide=pptx.addSlide();
+    slide.background={color:WHITE};
+    slide.addShape(pptx.ShapeType.rect,{x:0,y:0,w:.12,h:'100%',fill:{color:accent||BLUE}});
+    slide.addShape(pptx.ShapeType.rect,{x:.12,y:0,w:13.21,h:1.2,fill:{color:LIGHTBLUE}});
+    slide.addText(title,{x:.4,y:.18,w:12.5,h:.55,fontSize:20,fontFace:'Arial',color:DARK,bold:true});
+    if(subtitle)slide.addText(subtitle,{x:.4,y:.73,w:12,h:.3,fontSize:10,fontFace:'Courier New',color:accent||BLUE});
+    const rows=lines.map(l=>{
+      const isH=/^(##|【|[一二三四五六七八九十\d]+[.、])/.test(l)&&l.length<40;
+      const isBullet=/^[-•]/.test(l);
+      return{text:isBullet?'• '+l.replace(/^[-•]\s*/,''):l,options:{fontSize:isH?13:11,bold:isH,color:isH?DARK:GRAY,breakLine:true,paraSpaceAfter:isH?5:2}};
+    });
+    slide.addText(rows,{x:.4,y:1.35,w:12.5,h:5.4,fontFace:'Arial',valign:'top',lineSpacingMultiple:1.4});
+    slide.addShape(pptx.ShapeType.rect,{x:.12,y:7.05,w:13.21,h:.02,fill:{color:BORDER}});
+    slide.addText('竞品情报 · '+S.category+' · '+date,{x:.4,y:7.12,w:12,h:.22,fontSize:8,color:GRAY,fontFace:'Courier New'});
+  }
+
+  // 封面
+  const cover=pptx.addSlide();
+  cover.background={color:WHITE};
+  cover.addShape(pptx.ShapeType.rect,{x:0,y:0,w:.15,h:'100%',fill:{color:BLUE}});
+  cover.addShape(pptx.ShapeType.rect,{x:.15,y:0,w:13.18,h:4.5,fill:{color:LIGHTBLUE}});
+  cover.addText('竞品情报分析报告',{x:.5,y:.7,w:12,h:.5,fontSize:12,fontFace:'Courier New',color:BLUE});
+  cover.addText(S.category,{x:.5,y:1.3,w:12,h:1.5,fontSize:38,fontFace:'Arial',color:DARK,bold:true});
+  cover.addText('Planner · Analyst · Critic · Resolver · Strategist',{x:.5,y:2.9,w:12,h:.4,fontSize:12,fontFace:'Courier New',color:GRAY});
+  const h=S.knowledgeBase.filter(s=>s.confidence==='high').length,
+        m=S.knowledgeBase.filter(s=>s.confidence==='mid').length,
+        l=S.knowledgeBase.filter(s=>s.confidence==='low').length;
+  cover.addText('信源 · 高置信 '+h+' 条  中置信 '+m+' 条  参考 '+l+' 条',{x:.5,y:3.45,w:12,h:.35,fontSize:11,fontFace:'Arial',color:GRAY});
+  cover.addText(date,{x:.5,y:6.85,w:12,h:.3,fontSize:10,fontFace:'Courier New',color:GRAY});
+
+  // 各 Agent 内容
+  [{title:'结构化分析',sub:'ANALYST · 竞品分析师',content:S.analystResult,color:GREEN},
+   {title:'质疑与验证',sub:'CRITIC · 反向找茬',content:S.criticResult,color:AMBER},
+   {title:'矛盾解决',sub:'RESOLVER · 矛盾解决者',content:S.resolverResult,color:PURPLE},
+   {title:'战略洞察',sub:'STRATEGIST · 首席参谋',content:S.strategistResult,color:BLUE}
+  ].forEach(sec=>{
+    splitPages(sec.content,18).forEach((lines,idx,arr)=>{
+      addContentSlide(
+        arr.length>1?sec.title+' ('+(idx+1)+'/'+arr.length+')':sec.title,
+        idx===0?sec.sub:'',lines,sec.color
+      );
+    });
+  });
+
+  pptx.writeFile({fileName:'竞品分析_'+S.category+'_'+date+'.pptx'})
+    .then(()=>dbg('PPT导出成功','ok'))
+    .catch(e=>{dbg('PPT失败: '+e.message,'err');alert('PPT导出失败：'+e.message);});
 }
 </script>
 </body>
