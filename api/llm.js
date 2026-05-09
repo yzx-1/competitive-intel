@@ -13,15 +13,15 @@ export default async function handler(req, res) {
   if (provider === 'deepseek') {
     url = 'https://api.deepseek.com/chat/completions';
     headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + process.env.DEEPSEEK_API_KEY };
-    body = { model: model || 'deepseek-v4-pro', messages, max_tokens, temperature: 0.1, stream: true };
+    body = { model: model || 'deepseek-v4-pro', messages, max_tokens, temperature: 0.1 };
   } else if (provider === 'qwen') {
     url = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
     headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + process.env.QWEN_API_KEY };
-    body = { model: model || 'qwen-plus', messages, max_tokens, temperature: 0.1, stream: true };
+    body = { model: model || 'qwen-plus', messages, max_tokens, temperature: 0.1 };
   } else if (provider === 'openai') {
     url = 'https://api.openai.com/v1/chat/completions';
     headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + process.env.OPENAI_API_KEY };
-    body = { model: model || 'gpt-4o', messages, max_tokens, temperature: 0.1, stream: true };
+    body = { model: model || 'gpt-4o', messages, max_tokens, temperature: 0.1 };
   } else {
     return res.status(400).json({ error: 'Unsupported provider: ' + provider });
   }
@@ -31,6 +31,7 @@ export default async function handler(req, res) {
       method: 'POST',
       headers,
       body: JSON.stringify(body)
+      // 注意：不设置 signal/timeout，让 Vercel maxDuration 控制
     });
 
     if (!upstream.ok) {
@@ -39,26 +40,11 @@ export default async function handler(req, res) {
       return res.status(upstream.status).json({ error: text.slice(0, 500) });
     }
 
-    // 透传 SSE 流给前端
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-
-    const reader = upstream.body.getReader();
-    const decoder = new TextDecoder();
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      res.write(decoder.decode(value, { stream: true }));
-    }
-
-    res.end();
+    const data = await upstream.json();
+    return res.status(200).json(data);
 
   } catch (err) {
     console.error('[llm] error', err.message);
-    if (!res.headersSent) {
-      res.status(500).json({ error: err.message });
-    }
+    return res.status(500).json({ error: err.message });
   }
 }
