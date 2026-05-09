@@ -319,27 +319,16 @@ let currentProvider='deepseek'; // 后端支持的provider，当前固定deepsee
 // ─── STATE ───
 let S={category:'',maxRounds:3,searchesPerRound:3,criticSearchCount:3,knowledgeBase:[],analystResult:'',criticResult:'',resolverResult:'',criticSearchResults:[],strategistResult:''};
 
-// ─── LLM（调用后端代理，Key在服务端，前端不可见）───
+// ─── LLM（调用后端代理）───
 async function callLLM(system,user,maxTokens=1500){
   const p=currentProvider;
-  const modelMap={
-    deepseek: document.getElementById('model-select').value,
-  };
-  const selectedModel=modelMap[p]||'deepseek-v4-pro';
+  const selectedModel=document.getElementById('model-select').value||'deepseek-v4-pro';
   dbg('→ 后端代理 '+p+' '+selectedModel+' ('+maxTokens+'tok)');
-
-  // 构建messages（后端统一格式）
   const messages=[{role:'system',content:system},{role:'user',content:user}];
-
   const res=await fetch('/api/llm',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      provider: p,
-      model: selectedModel,
-      messages,
-      max_tokens: maxTokens
-    })
+    body:JSON.stringify({provider:p,model:selectedModel,messages,max_tokens:maxTokens})
   });
   if(!res.ok){
     const t=await res.text();
@@ -458,7 +447,7 @@ async function startResearch(){
         const knownShort=knownSummary.split('\n').slice(0,6).join('\n');
         const planSys='You are a competitive research planner. Output ONLY a raw JSON object. No explanation, no markdown, no code blocks. Your entire response must start with { and end with }.';
         const planUsr='Category: '+S.category+'\nRound: '+round+' of '+S.maxRounds+'\nSearches needed: '+S.searchesPerRound+'\n\nKnown so far:\n'+knownShort+'\n\nRespond with ONLY this JSON:\n{"round_goal":"<one sentence>","confidence_gaps":["<gap1>","<gap2>"],"next_searches":[{"query":"<specific query with brand names>","intent":"<what this finds>","preferred_source":"<report|news|review>"}],"stop_reason":'+(round>=S.maxRounds?'"reached max rounds"':'null')+'}\n\nnext_searches must have exactly '+S.searchesPerRound+' items. stop_reason is '+(round>=S.maxRounds?'a non-null string':'null')+'.';
-        const raw=await callLLM(planSys,planUsr,1600);
+        const raw=await callLLM(planSys,planUsr,1200);
         dbg('Planner返回: '+raw.slice(0,300));
         plan=parseJSON(raw);
         if(plan&&plan.next_searches&&plan.next_searches.length>0){dbg('✓ JSON解析成功: '+plan.next_searches.map(s=>s.query).join(' | '),'ok');}
@@ -491,8 +480,8 @@ async function startResearch(){
     dbg('情报库长度: '+ctx.length+'字符');
     S.analystResult=await callLLM(
       '你是竞品分析师。基于情报库生成结构化报告。严禁在报告开头写"报告日期"或任何日期标题。时间表述只来自搜索结果的明确日期，没有明确日期就不写时间。每条结论标注置信度[高/中/低]和来源类型。使用Markdown格式（##标题，**粗体**，表格，列表）。',
-      '品类：'+S.category+'\n\n情报库：\n'+ctx+'\n\n请生成竞品分析报告：市场格局、各竞品差异化、用户真实需求、市场空白、数据质量说明。',
-      3000
+      '品类：'+S.category+'\n\n情报库：\n'+ctx.slice(0,4000)+'\n\n请生成竞品分析报告：市场格局、各竞品差异化、用户真实需求、市场空白、数据质量说明。',
+      1500
     );
     setMD('analyst-text',S.analystResult);
     openAgentBody('analyst');
@@ -550,7 +539,7 @@ async function startResearch(){
         ? 'Evidence from reverse searches:\n'+evidence.map(e=>'['+e.type.toUpperCase()+'] Claim: '+e.claim+'\nEvidence: '+e.title+': '+e.snippet+'\nSource: '+e.url+' ['+e.confidence+']').join('\n\n---\n\n')
         : '(No reverse search results available)')+'\n\n'+
       'OUTPUT INSTRUCTIONS:\n\n## Section 1 - Markdown Analysis (in Chinese):\nWrite: ## 置信度复核, ## 数据冲突, ## 信息缺口\nFor each disputed claim: rate confidence, cite evidence, state if falsification failed.\n\n## Section 2 - JSON for Resolver (MUST be last, in ```json``` fence):\n```json\n{"resolver_searches":[{"query":"specific search query to resolve contradiction","resolves":"which specific contradiction"},{"query":"...","resolves":"..."}]}\n```\nInclude 2-4 searches targeting the MOST critical unresolved contradictions. Queries must be specific with numbers/brands.';
-    S.criticResult=await callLLM(cpSys,cpUsr,3000);
+    S.criticResult=await callLLM(cpSys,cpUsr,1500);
     setMD('critic-text',S.criticResult);
     setAgentState('critic','done','完成（含Resolver搜索词）');
 
@@ -609,7 +598,7 @@ async function startResearch(){
         ? 'Resolver补充搜索结果：\n'+resEvText+'\n\n对每个矛盾点，输出：\n**矛盾：** [描述]\n**补搜发现：** [找到什么]\n**更新结论：** [✅已解决/⚠️部分解决/❌未解决] [新结论]\n\n最后写一段"## 综合置信度更新"，说明哪些结论的置信度被提升/降低/维持。'
         : '（补充搜索无结果）\n基于Critic质疑和Analyst原报告的逻辑，做内部一致性裁定：哪些矛盾可以通过逻辑推理解决，哪些必须外部验证才能确定。输出裁定结论和置信度评估。');
 
-    S.resolverResult=await callLLM(resSys,resUsr,3000);
+    S.resolverResult=await callLLM(resSys,resUsr,1500);
     setMD('resolver-text',S.resolverResult);
     setAgentState('resolver','done','✓ 闭环完成');
     setProgress(92,'Strategist生成最终洞察...');
@@ -618,8 +607,8 @@ async function startResearch(){
     setAgentState('strategist','running','综合推断...');
     S.strategistResult=await callLLM(
       '你是首席参谋，基于Analyst、Critic质疑、以及Resolver对矛盾的最新解决结论，生成最终战略报告。以Resolver的更新结论为准，不要重复已被解决的矛盾。语言简练，直接给结论，使用Markdown格式。',
-      '品类：'+S.category+'\n\nAnalyst原始分析：\n'+S.analystResult.slice(0,3000)+'\n\nCritic质疑：\n'+S.criticResult.replace(/```json[\s\S]*?```/g,'').slice(0,1500)+'\n\nResolver更新结论（以此为准）：\n'+S.resolverResult+'\n\n输出：一句话市场判断、Top3机会点（具体可执行）、主要风险、决策者优先行动2条、置信度总评（哪些可直接决策/哪些需补充）。',
-      3200
+      '品类：'+S.category+'\n\nAnalyst原始分析：\n'+S.analystResult.slice(0,1500)+'\n\nCritic质疑：\n'+S.criticResult.replace(/```json[\s\S]*?```/g,'').slice(0,800)+'\n\nResolver更新结论（以此为准）：\n'+S.resolverResult.slice(0,800)+'\n\n输出：一句话市场判断、Top3机会点（具体可执行）、主要风险、决策者优先行动2条、置信度总评。',
+      1500
     );
     setMD('strategist-text',S.strategistResult);
     setMD('insight-text',S.strategistResult);
