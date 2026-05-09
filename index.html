@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>竞品情报 v5-fix</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.12.0/pptxgen.bundled.js"></script>
+<script src="/pptxgen.bundle.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
 :root{--bg:#0d0f14;--surface:#161920;--surface2:#1e2230;--surface3:#252a3a;--border:rgba(255,255,255,0.07);--border-lit:rgba(99,182,255,0.35);--text:#e8eaf0;--muted:#6b7280;--dim:#3d4455;--accent:#63b6ff;--accent-bg:rgba(99,182,255,0.08);--green:#4ade80;--green-bg:rgba(74,222,128,0.08);--amber:#fbbf24;--amber-bg:rgba(251,191,36,0.08);--red:#f87171;--red-bg:rgba(248,113,113,0.08);--purple:#a78bfa;--purple-bg:rgba(167,139,250,0.08);--font:'Sora',sans-serif;--mono:'JetBrains Mono',monospace;}
@@ -534,7 +534,7 @@ async function startResearch(){
 
     // Step B: 构建cpUsr（此时evidence已填充），Critic写完整质疑报告 + 结尾附Resolver搜索词JSON
     setAgentState('critic','running','写质疑报告 + 生成Resolver搜索词...');
-    const cpUsr='Analyst report on "'+S.category+'":\n'+S.analystResult.slice(0,4000)+'\n\n'+
+    const cpUsr='Analyst report on "'+S.category+'":\n'+S.analystResult.slice(0,1200)+'\n\n'+
       (evidence.length
         ? 'Evidence from reverse searches:\n'+evidence.map(e=>'['+e.type.toUpperCase()+'] Claim: '+e.claim+'\nEvidence: '+e.title+': '+e.snippet+'\nSource: '+e.url+' ['+e.confidence+']').join('\n\n---\n\n')
         : '(No reverse search results available)')+'\n\n'+
@@ -593,7 +593,7 @@ async function startResearch(){
 
     const resSys='你是矛盾解决者Resolver，使用Markdown格式输出中文。你的任务是给出最终可信结论，不是重复质疑。';
     const resUsr=
-      'Critic质疑报告：\n'+S.criticResult.replace(/```json[\s\S]*?```/g,'').slice(0,4000)+'\n\n'+
+      'Critic质疑报告：\n'+S.criticResult.replace(/```json[\s\S]*?```/g,'').slice(0,1000)+'\n\n'+
       (resEvText
         ? 'Resolver补充搜索结果：\n'+resEvText+'\n\n对每个矛盾点，输出：\n**矛盾：** [描述]\n**补搜发现：** [找到什么]\n**更新结论：** [✅已解决/⚠️部分解决/❌未解决] [新结论]\n\n最后写一段"## 综合置信度更新"，说明哪些结论的置信度被提升/降低/维持。'
         : '（补充搜索无结果）\n基于Critic质疑和Analyst原报告的逻辑，做内部一致性裁定：哪些矛盾可以通过逻辑推理解决，哪些必须外部验证才能确定。输出裁定结论和置信度评估。');
